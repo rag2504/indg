@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Select Ingredients</title>
+  <style>
+    .ingredient-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .ingredient-item {
+      width: 150px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .ingredient-item.selected {
+      background-color: #4CAF50;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Select Ingredients</h1>
+  <p>Please select at least 3 ingredients</p>
+  <div class="ingredient-list" id="ingredientList"></div>
+  <button id="submitBtn" disabled>Submit</button>
+
+  <script>
+    const ingredientList = document.getElementById('ingredientList');
+    const submitBtn = document.getElementById('submitBtn');
+    let selectedIngredients = [];
+
+    // Fetch available ingredients from the backend
+    fetch('/ingredients/available')
+      .then(response => response.json())
+      .then(data => {
+        const ingredients = data.ingredients;
+        ingredients.forEach(ingredient => {
+          const div = document.createElement('div');
+          div.classList.add('ingredient-item');
+          div.textContent = ingredient;
+          div.addEventListener('click', () => toggleSelection(ingredient, div));
+          ingredientList.appendChild(div);
+        });
+      })
+      .catch(error => console.error('Error fetching ingredients:', error));
+
+    function toggleSelection(ingredient, element) {
+      if (selectedIngredients.includes(ingredient)) {
+        selectedIngredients = selectedIngredients.filter(item => item !== ingredient);
+        element.classList.remove('selected');
+      } else {
+        selectedIngredients.push(ingredient);
+        element.classList.add('selected');
+      }
+      updateSubmitButton();
+    }
+
+    function updateSubmitButton() {
+      if (selectedIngredients.length >= 3) {
+        submitBtn.disabled = false;
+      } else {
+        submitBtn.disabled = true;
+      }
+    }
+
+    // Submit the selected ingredients to the backend
+    submitBtn.addEventListener('click', () => {
+      fetch('/ingredients/select', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ selectedIngredients }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        alert(data.message);
+      })
+      .catch(error => {
+        console.error('Error submitting ingredients:', error);
+        alert('Error submitting ingredients');
+      });
+    });
+  </script>
+</body>
+</html>
